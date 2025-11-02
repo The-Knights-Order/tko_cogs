@@ -1,50 +1,65 @@
 import random
-from redbot.core import commands, Config
+import discord
+from redbot.core import commands, app_commands
 
 class DiceCaster(commands.Cog):
     def __init__(self, bot):
-        """Initialize the cog and register config defaults."""
         self.bot = bot
-        # Use force_registration for safety and a unique identifier
-        self.config = Config.get_conf(
-            self, identifier=123456789, force_registration=True)
-        self.config.register_guild(active_game=None, guesses={})
 
-    @commands.command()
-    async def d4(self, ctx):
-        """Rolls a 4-sided die."""
-        result = random.randint(1, 4)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d4!")
+    @app_commands.command(name="roll", description="Roll any combination of dice (e.g., 1d20, 2d6 3d4)")
+    @app_commands.guild_only()
+    async def roll(self, interaction: discord.Interaction, query: str = None):
+        """
+        Roll any combination of any number of dice, defaults to a single D20.
+        Users can type nothing, a single die, or many space-separated dice:
+          /roll
+          /roll 1D20
+          /roll 2D6 3D4
+        """
+        if query is None:
+            # Default roll: 1d20
+            result = random.randint(1, 20)
+            await interaction.response.send_message(f"🎲 You rolled **1d20** → **{result}**")
+            return
 
-    @commands.command()
-    async def d6(self, ctx):
-        """Rolls a 6-sided die."""
-        result = random.randint(1, 6)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d6!")
+        # Split the input into tokens (e.g., ["2d6", "3d4"])
+        tokens = query.upper().split()
 
-    @commands.command()
-    async def d8(self, ctx):
-        """Rolls an 8-sided die."""
-        result = random.randint(1, 8)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d8!")
+        total_sum = 0
+        results_msg = []
 
-    @commands.command()
-    async def d10(self, ctx):
-        """Rolls a 10-sided die."""
-        result = random.randint(1, 10)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d10!")
+        for token in tokens:
+            # Validate token (e.g., "2D6")
+            if 'D' not in token:
+                results_msg.append(f"❌ Invalid format: `{token}` (must be like 2d6)")
+                continue
 
-    @commands.command()
-    async def d12(self, ctx):
-        """Rolls a 12-sided die."""
-        result = random.randint(1, 12)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d12!")
+            try:
+                num, sides = token.split('D')
+                num = int(num) if num else 1
+                sides = int(sides)
+            except ValueError:
+                results_msg.append(f"❌ Invalid number in `{token}`")
+                continue
 
-    @commands.command()
-    async def d20(self, ctx):
-        """Rolls a 20-sided die."""
-        result = random.randint(1, 20)
-        await ctx.send(f"🎲 You rolled a **{result}** on a d20!")
+            if num <= 0 or sides <= 0:
+                results_msg.append(f"❌ Invalid values in `{token}` (must be positive integers)")
+                continue
+
+            # Roll the dice
+            rolls = [random.randint(1, sides) for _ in range(num)]
+            subtotal = sum(rolls)
+            total_sum += subtotal
+
+            # Add to message
+            rolls_display = ", ".join(str(r) for r in rolls)
+            results_msg.append(f"🎲 `{token}` → {rolls_display} (Total: {subtotal})")
+
+        # Combine and send final message
+        msg = "\n".join(results_msg)
+        msg += f"\n**Grand Total: {total_sum}**" if len(tokens) > 1 else ""
+
+        await interaction.response.send_message(msg)
 
 async def setup(bot):
-    await bot.add_cog(DiceCaster(bot))
+    await bot.add_cog(DiceRoller(bot))
