@@ -1,6 +1,7 @@
 import random
 from redbot.core import commands, Config
 
+
 class DiceCaster(commands.Cog):
     def __init__(self, bot):
         """Initialize the cog and register config defaults."""
@@ -45,6 +46,3 @@ class DiceCaster(commands.Cog):
         """Rolls a 20-sided die."""
         result = random.randint(1, 20)
         await ctx.send(f"🎲 You rolled a **{result}** on a d20!")
-
-async def setup(bot):
-    await bot.add_cog(DiceCaster(bot))
