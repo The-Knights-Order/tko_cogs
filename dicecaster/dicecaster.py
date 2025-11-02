@@ -1,6 +1,8 @@
 import random
 import discord
+import re
 from redbot.core import commands, app_commands
+
 
 class DiceCaster(commands.Cog):
     def __init__(self, bot):
@@ -28,22 +30,22 @@ class DiceCaster(commands.Cog):
         total_sum = 0
         results_msg = []
 
+        pattern = re.compile("[1-9](\d?){1,2}D[2-9](\d?){1,2}", re.IGNORECASE)
+
         for token in tokens:
             # Validate token (e.g., "2D6")
-            if 'D' not in token:
-                results_msg.append(f"❌ Invalid format: `{token}` (must be like 2d6)")
+            if pattern.fullmatch(token).group(0):  # Regex instead
+                results_msg.append(
+                    f"❌ Invalid format: `{token}` (must be like 2d6)")
                 continue
 
             try:
                 num, sides = token.split('D')
                 num = int(num) if num else 1
-                sides = int(sides)
+                sides = int(sides) if num else 2
+
             except ValueError:
                 results_msg.append(f"❌ Invalid number in `{token}`")
-                continue
-
-            if num <= 0 or sides <= 0:
-                results_msg.append(f"❌ Invalid values in `{token}` (must be positive integers)")
                 continue
 
             # Roll the dice
@@ -53,13 +55,11 @@ class DiceCaster(commands.Cog):
 
             # Add to message
             rolls_display = ", ".join(str(r) for r in rolls)
-            results_msg.append(f"🎲 `{token}` → {rolls_display} (Total: {subtotal})")
+            results_msg.append(
+                f"🎲 `{token}` → {rolls_display} (Total: {subtotal})")
 
         # Combine and send final message
         msg = "\n".join(results_msg)
         msg += f"\n**Grand Total: {total_sum}**" if len(tokens) > 1 else ""
 
         await interaction.response.send_message(msg)
-
-async def setup(bot):
-    await bot.add_cog(DiceRoller(bot))
