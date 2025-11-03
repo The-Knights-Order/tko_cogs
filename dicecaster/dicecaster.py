@@ -3,6 +3,9 @@ import discord
 import re
 from redbot.core import commands, app_commands
 
+PATTERN = re.compile(
+    r'^([1-9]\d{0,1})D((?:[2-9]\d{0,2}|1\d{1,2}))$', re.IGNORECASE)
+
 
 class DiceCaster(commands.Cog):
     def __init__(self, bot):
@@ -21,24 +24,21 @@ class DiceCaster(commands.Cog):
         if query is None:
             # Default roll: 1d20
             result = random.randint(1, 20)
-            await interaction.response.send_message(f"🎲 You rolled **1d20** → **{result}**")
+            await interaction.response.send_message(f"🎲 You rolled **1D20** → **{result}**")
             return
 
-        # Split the input into tokens (e.g., ["2d6", "3d4"])
+        # Split the input into tokens (e.g., ["2D6", "3D4"])
         tokens = query.upper().split()
 
         total_sum = 0
         results_msg = []
 
-        pattern = re.compile(
-            r'^([1-9]\d{0,1})D((?:[2-9]\d{0,2}|1\d{1,2}))$', re.IGNORECASE)
-
         for token in tokens:
             # Validate and extract (e.g., "2D6")
-            m = pattern.fullmatch(token)
+            m = PATTERN.fullmatch(token)
             if not m:
                 results_msg.append(
-                    f"❌ Invalid format: `{token}` (must be like 2d6)")
+                    f"❌ Invalid format: `{token}` (must be like 2D6)")
                 continue
 
             num = int(m.group(1))
