@@ -31,23 +31,18 @@ class DiceCaster(commands.Cog):
         results_msg = []
 
         pattern = re.compile(
-            r'^[1-9]\d{0,1}D(?:[2-9]\d{0,2}|1\d{1,2})$', re.IGNORECASE)
+            r'^([1-9]\d{0,1})D((?:[2-9]\d{0,2}|1\d{1,2}))$', re.IGNORECASE)
 
         for token in tokens:
-            # Validate token (e.g., "2D6")
-            if not pattern.fullmatch(token):
+            # Validate and extract (e.g., "2D6")
+            m = pattern.fullmatch(token)
+            if not m:
                 results_msg.append(
                     f"❌ Invalid format: `{token}` (must be like 2d6)")
                 continue
 
-            try:
-                num, sides = token.split('D')
-                num = int(num) if num else 1
-                sides = int(sides) if num else 2
-
-            except ValueError:
-                results_msg.append(f"❌ Invalid number in `{token}`")
-                continue
+            num = int(m.group(1))
+            sides = int(m.group(2))
 
             # Roll the dice
             rolls = [random.randint(1, sides) for _ in range(num)]
