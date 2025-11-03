@@ -30,7 +30,8 @@ class DiceCaster(commands.Cog):
         total_sum = 0
         results_msg = []
 
-        pattern = re.compile(r'^[1-9]\d{0,1}D[2-9]\d{0,2}$', re.IGNORECASE)
+        pattern = re.compile(
+            r'^[1-9]\d{0,1}D(?:[2-9]\d{0,2}|1\d{1,2})$', re.IGNORECASE)
 
         for token in tokens:
             # Validate token (e.g., "2D6")
